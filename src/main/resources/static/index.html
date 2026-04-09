@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en"> <head>
+    <meta charset="UTF-8">
+    <title>Saint image AI Gen</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: whitesmoke;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5); width: 90%; max-width: 450px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: -0.5px;
+            font-weight: 700 ;
+
+        }
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            color: whitesmoke;
+            outline: none;
+            transition: all 0.3s ease;
+            padding: 18px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: none;
+        }
+        textarea:focus {
+            border-color: #3b82f6;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+
+        }
+        button {
+            background: #3b82f6;
+            margin-top: 20px;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition:  0.3s cubic-bezier(0.4, 0, 0.2, 1) ;
+            width: 100%;
+        }
+        button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+
+        }
+
+
+
+        #output {
+            margin-top: 25px;
+            border-radius:20px ;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #output img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            animation: fadeIn 0.8s ease-out;
+
+        }
+        @keyframes fadeIn {
+            from {opacity: 0;
+            transform: scale(0.95);}
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1>AI Image Generator</h1>
+
+<label for="prompt">Enter your prompt below:</label>
+<textarea id="prompt" placeholder="Describe anything... e.g. 'A futuristic city'"></textarea>
+
+<br>
+
+<button onclick="generate()">Generate image🌚</button>
+<div id="output"></div>
+</div>
+
+<script>
+    async function generate() {
+        const prompt = document.getElementById('prompt').value;
+        const output = document.getElementById('output');
+
+        if(!prompt) {
+            alert("Please enter a prompt first!");
+            return;
+        }
+
+        output.innerHTML = "<p>Creating your masterpiece... 🌚</p>";
+
+        try {
+            const response = await fetch('/api/image/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                output.innerHTML = `<p style='color:red;'>${data.error}</p>`;
+            } else {
+                output.innerHTML = `<img src="${data.image}" alt="Generated AI Image">`;
+            }
+        } catch (error) {
+            output.innerHTML = "<p style='color:red;'>Error generating image. Check your backend!</p>";
+        }
+    }
+</script>
+</body>
+</html>

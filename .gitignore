@@ -1,0 +1,33 @@
+.env
+.gradle/
+build/
+.idea/
+*.iml
+# IntelliJ IDEA
+*.ipr
+*.iws
+# Eclipse
+.classpath
+.project
+.settings/
+# VS Code
+.vscode/
+# OS
+.DS_Store
+Thumbs.db
+# Logs
+*.log
+logs/
+# Temporary files
+*.tmp
+*.swp
+*~
+# Gradle
+gradle-app.setting
+!gradle-wrapper.jar
+# Kotlin
+*.kt~
+# Maven (if any)
+target/
+# Node (if any)
+node_modules/
