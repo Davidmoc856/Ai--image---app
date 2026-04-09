@@ -5,7 +5,7 @@ WORKDIR /home/gradle/src
 RUN ./gradlew build -x test --no-daemon
 
 # Stage 2: Run the application
-FROM openjdk:17-jdk-slim
+FROM amazoncorretto:17-alpine
 EXPOSE 9090
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar"]
