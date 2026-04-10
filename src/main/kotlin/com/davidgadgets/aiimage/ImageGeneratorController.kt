@@ -9,10 +9,8 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/image")
-@CrossOrigin(origins = ["*"]) // Allows your frontend to talk to your backend
+@CrossOrigin(origins = ["*"])
 class ImageGeneratorController {
-
-    // Get your FREE token at: huggingface.co/settings/tokens
 
     @Value("\${HF_TOKEN}")
     private lateinit var hfToken: String
@@ -20,51 +18,58 @@ class ImageGeneratorController {
     @Value("\${HF_MODEL_URL}")
     private lateinit var modelUrl : String
 
-
-
     private val restTemplate = RestTemplate()
 
     @PostMapping("/generate")
-    fun generate(@RequestBody request: Map<String, String>): ResponseEntity<Map<String, String>> {
+    fun generate(@RequestBody request: Map<String, String>): ResponseEntity<Map<String, Any>> {
         val prompt = request["prompt"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "Prompt is required"))
+
+        // We will store all 4 images here
+        val imageList = mutableListOf<String>()
 
         try {
             val headers = HttpHeaders()
             headers.set("Authorization", "Bearer $hfToken")
             headers.contentType = MediaType.APPLICATION_JSON
-
             headers.set("Accept", "image/png")
 
-            val requestBody = mapOf("inputs" to prompt, "parameters" to mapOf("num_inference_steps" to 20, "guidance_scale" to 7.5))
-            val requestEntity = HttpEntity(requestBody, headers)
+            // Generate 4 variations
+            for (i in 1..4) {
+                // We add a tiny random seed to the prompt so each image is different
+                val uniquePrompt = "$prompt (variation ${System.currentTimeMillis() % 1000})"
 
-            val responseEntity = restTemplate.exchange(modelUrl, HttpMethod.POST, requestEntity, ByteArray::class.java)
+                val requestBody = mapOf(
+                    "inputs" to uniquePrompt,
+                    "parameters" to mapOf("num_inference_steps" to 4) // FLUX Schnell is fast!
+                )
 
-            if (responseEntity.statusCode.is2xxSuccessful) {
-                val responseBytes = responseEntity.body
-                if (responseBytes != null && responseBytes.isNotEmpty()) {
-                    val base64Image = Base64.getEncoder().encodeToString(responseBytes)
-                    return ResponseEntity.ok(mapOf("image" to "data:image/png;base64,$base64Image"))
-                } else {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Failed to generate image"))
+                val requestEntity = HttpEntity(requestBody, headers)
+                val responseEntity = restTemplate.exchange(modelUrl, HttpMethod.POST, requestEntity, ByteArray::class.java)
+
+                if (responseEntity.statusCode.is2xxSuccessful) {
+                    val responseBytes = responseEntity.body
+                    if (responseBytes != null && responseBytes.isNotEmpty()) {
+                        val base64Image = Base64.getEncoder().encodeToString(responseBytes)
+                        imageList.add("data:image/png;base64,$base64Image")
+                    }
                 }
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Error generating image: ${responseEntity.statusCode}"))
             }
-        }  catch (e: HttpClientErrorException) {
-        // This catches the 402, 429, and 404 errors specifically
-        val friendlyMessage = when (e.statusCode.value()) {
-            402 -> "Server energy depleted for this session! Please return in 24 hours or try again later. 🔋"
-            429 -> "Slow down! The AI is a bit overwhelmed. Please wait a minute before generating again."
-            404 -> "The AI model is currently taking a nap. Let's try again in a few minutes."
-            else -> "Unexpected AI hiccup: ${e.message}"
-        }
-        return ResponseEntity.status(e.statusCode).body(mapOf("error" to friendlyMessage))
 
-    } catch (e: Exception) {
-        // This catches everything else (like internet connection issues)
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(mapOf("error" to "Something went wrong on our end. Please check your connection!"))
-    }
+            return if (imageList.isNotEmpty()) {
+                ResponseEntity.ok(mapOf("images" to imageList))
+            } else {
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Failed to generate images"))
+            }
+
+        } catch (e: HttpClientErrorException) {
+            val friendlyMessage = when (e.statusCode.value()) {
+                402 -> "Server energy depleted! Please return in 24 hours. 🔋"
+                429 -> "Slow down! The AI is overwhelmed. Try again in a minute."
+                else -> "AI hiccup: ${e.message}"
+            }
+            return ResponseEntity.status(e.statusCode).body(mapOf("error" to friendlyMessage))
+        } catch (e: Exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Connection issue! Check your internet."))
+        }
     }
 }
