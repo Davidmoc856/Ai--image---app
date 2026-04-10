@@ -50,7 +50,7 @@ class ImageGeneratorController {
                     val responseBytes = responseEntity.body
                     if (responseBytes != null && responseBytes.isNotEmpty()) {
                         val base64Image = Base64.getEncoder().encodeToString(responseBytes)
-                        imageList.add("data:image/png;base64,$base64Image")
+                        imageList.add("data:image/png;base64, $base64Image")
                     }
                 }
             }

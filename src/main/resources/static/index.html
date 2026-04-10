@@ -97,7 +97,7 @@
             const data = await response.json();
 
             if (data.error) {
-                grid.innerHTML = <p style='color:red;'>${data.error}</p>;
+                grid.innerHTML = `<p style='color:red;'>${data.error}</p>`;
             } else {
                 bar.style.width = "100%";
                 data.images.forEach((imgSrc, index) => {const card = document.createElement('div');
