@@ -2,65 +2,208 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saint Image AI Gen - Gallery</title>
     <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-dark: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(circle at top left, #1e293b, var(--bg-dark));
             min-height: 100vh;
             margin: 0;
-            color: whitesmoke;
+            color: #f8fafc;
             display: flex;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 20px;
+            box-sizing: border-box;
         }
+
         .container {
-            background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100%; max-width: 900px;
-            backdrop-filter: blur(25px);
-            display: flex; flex-direction: column; gap: 20px;
+            background: var(--glass);
+            padding: clamp(20px, 5vw, 40px);
+            border-radius: 32px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 1000px;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+
+        h1 {
+            font-size: clamp(24px, 6vw, 32px);
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
         textarea {
-            width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px; color: whitesmoke; padding: 18px; font-size: 16px; box-sizing: border-box; resize: none;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: white;
+            padding: 20px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
         }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+
         button {
-            background: #3b82f6; color: white; border: none; padding: 15px; border-radius: 12px;
-            font-weight: 600; cursor: pointer; transition: 0.3s;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
-        button:hover { background: #2563eb; transform: translateY(-2px); }
 
-        /* Progress Bar Styles */
-        #progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; display: none; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: #3b82f6; transition: width 0.5s ease; }
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
 
-        /* Gallery Grid */
+        button:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Modern Grid */
         #output-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-top: 10px;
         }
-        .image-card {
-            background: rgba(0,0,0,0.3); border-radius: 20px; overflow: hidden;
-            display: flex; flex-direction: column; animation: fadeIn 0.5s ease;
-        }
-        .image-card img { width: 100%; height: auto; display: block; }
-        .download-btn {
-            background: rgba(255,255,255,0.1); color: white; text-decoration: none;
-            text-align: center; padding: 10px; font-size: 14px; transition: 0.3s;
-        }
-        .download-btn:hover { background: rgba(59, 130, 246, 0.5); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Image Card Vibe */
+        .image-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            animation: slideUp 0.6s ease forwards;
+        }
+
+        .image-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .image-card img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            display: block;
+        }
+
+        .download-btn {
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            display: block;
+            backdrop-filter: blur(10px);
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: var(--primary);
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 24px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Progress Bar Modernized */
+        #progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            display: none;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        /* Responsive Fix for Mobile */
+        @media (max-width: 600px) {
+            #output-grid {
+                grid-template-columns: 1fr; /* Single column makes images BIG on phones */
+            }
+            .container {
+                padding: 20px;
+                border-radius: 24px;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>AI Image Gallery Generator</h1>
-    <textarea id="prompt" placeholder="Describe your vision..."></textarea>
-    <button id="genBtn" onclick="generate()">Generate Images 🌚</button>
+    <h1>Saint AI Engine 🌚</h1>
+    <textarea id="prompt" rows="3" placeholder="Describe something legendary..."></textarea>
+    <button id="genBtn" onclick="generate()">Generate Masterpiece</button>
 
     <div id="progress-container">
         <div id="progress-bar"></div>
@@ -77,14 +220,22 @@
         const barContainer = document.getElementById('progress-container');
         const btn = document.getElementById('genBtn');
 
-        if(!prompt) { alert("Enter a prompt!"); return; }
+        if(!prompt) { alert("Please enter a prompt!"); return; }
 
-        // UI Reset
+        // Start UI State
         grid.innerHTML = "";
+        // Create 4 skeleton loaders
+        for(let i=0; i<4; i++) {
+            const skel = document.createElement('div');
+            skel.className = 'skeleton';
+            grid.appendChild(skel);
+        }
+
         barContainer.style.display = "block";
-        bar.style.width = "30%"; // Initial jump
+        setTimeout(() => bar.style.width = "40%", 100);
+
         btn.disabled = true;
-        btn.innerText = "Processing...";
+        btn.innerText = "Manifesting... ✨";
 
         try {
             const response = await fetch('/api/image/generate', {
@@ -93,28 +244,34 @@
                 body: JSON.stringify({ prompt: prompt })
             });
 
-            bar.style.width = "70%";
+            bar.style.width = "80%";
             const data = await response.json();
 
             if (data.error) {
-                grid.innerHTML = `<p style='color:red;'>${data.error}</p>`;
-            } else {
+                 grid.innerHTML = `<p style='color:#ef4444; text-align:center; width:100%; grid-column: 1/-1;'>${data.error}</p>`;
+             } else {
                 bar.style.width = "100%";
-                data.images.forEach((imgSrc, index) => {const card = document.createElement('div');
+                grid.innerHTML = ""; // Clear skeletons
+
+                data.images.forEach((imgSrc, index) => {
+                    const card = document.createElement('div');
                     card.className = 'image-card';
+                    card.style.animationDelay = `${index * 0.1}s`;
                     card.innerHTML = `
-                        <img src="${imgSrc}" alt="AI Image ${index + 1}">
-                        <a href="${imgSrc}" download="AI_Image_${index+1}.png" class="download-btn">Download Image</a>
+                        <img src="${imgSrc}" alt="AI Image"><a href="${imgSrc}" download="Saint_AI_${Date.now()}.png" class="download-btn">Save to Device</a>
                     `;
                     grid.appendChild(card);
                 });
             }
         } catch (error) {
-            grid.innerHTML = "<p style='color:red;'>Failed to connect to backend.</p>";
+            grid.innerHTML = "<p style='color:#ef4444; text-align:center; width:100%;'>Network Error. Check your connection!</p>";
         } finally {
             btn.disabled = false;
-            btn.innerText = "Generate Images 🌚";
-            setTimeout(() => { barContainer.style.display = "none"; bar.style.width = "0%"; }, 2000);
+            btn.innerText = "Generate Masterpiece";
+            setTimeout(() => {
+                barContainer.style.display = "none";
+                bar.style.width = "0%";
+            }, 2000);
         }
     }
 </script>
