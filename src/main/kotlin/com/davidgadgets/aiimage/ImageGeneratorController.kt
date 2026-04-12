@@ -12,28 +12,19 @@ import java.util.*
 @CrossOrigin(origins = ["*"])
 class ImageGeneratorController {
 
-    @Value("\${HF_TOKEN}")
+    @Value("\${HF_TOKEN:}")
     private lateinit var hfToken: String
 
-    @Value("\${HF_MODEL_URL}")
-    private lateinit var modelUrl: String
-
-    @Value("\${GEMINI_API_KEY}") // We will add this to your Render Environment Variables
-    private lateinit var geminiApiKey: String
+    @Value("\${HF_MODEL_URL:}")
+    private lateinit var modelUrl : String
 
     private val restTemplate = RestTemplate()
 
     @PostMapping("/generate")
     fun generate(@RequestBody request: Map<String, String>): ResponseEntity<Map<String, Any>> {
-        val rawPrompt = request["prompt"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "Prompt is required"))
+        val prompt = request["prompt"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "Prompt is required"))
 
-        // --- THE BRAIN UPGRADE: PROMPT EXPANSION ---
-        val smartPrompt = try {
-            expandPromptWithGemini(rawPrompt)
-        } catch (_: Exception) {
-            rawPrompt // Fallback to raw prompt if Gemini fails
-        }
-
+        // We will store all 4 images here
         val imageList = mutableListOf<String>()
 
         try {
@@ -42,11 +33,14 @@ class ImageGeneratorController {
             headers.contentType = MediaType.APPLICATION_JSON
             headers.set("Accept", "image/png")
 
-            for (i in 1..4) {
-                // We add the smart prompt here
+            // Generate 4 variations
+            for (_i in 1..4) {
+                // We add a tiny random seed to the prompt so each image is different
+                val uniquePrompt = "$prompt (variation ${System.currentTimeMillis() % 1000})"
+
                 val requestBody = mapOf(
-                    "inputs" to "$smartPrompt (variation $i)",
-                    "parameters" to mapOf("num_inference_steps" to 4)
+                    "inputs" to uniquePrompt,
+                    "parameters" to mapOf("num_inference_steps" to 4) // FLUX Schnell is fast!
                 )
 
                 val requestEntity = HttpEntity(requestBody, headers)
@@ -68,30 +62,14 @@ class ImageGeneratorController {
             }
 
         } catch (e: HttpClientErrorException) {
-            return ResponseEntity.status(e.statusCode).body(mapOf("error" to "AI is busy. Try again soon!"))
+            val friendlyMessage = when (e.statusCode.value()) {
+                402 -> "Server energy depleted! Please return in 24 hours. 🔋"
+                429 -> "Slow down! The AI is overwhelmed. Try again in a minute."
+                else -> "AI hiccup: ${e.message}"
+            }
+            return ResponseEntity.status(e.statusCode).body(mapOf("error" to friendlyMessage))
         } catch (_: Exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Connection error!"))
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Connection issue! Check your internet."))
         }
-    }
-
-    // This is the hidden "Ghostwriter" function
-    @Suppress("UNCHECKED_CAST")
-    private fun expandPromptWithGemini(rawPrompt: String): String {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$geminiApiKey"
-
-        val systemInstruction = "You are a professional image prompt engineer. Expand the following short text into a high-quality, cinematic image prompt. Include cultural details, lighting, and textures. If the text mentions Nigerian context (like Bowen University or Pidgin), make sure the prompt reflects that accurately. Return ONLY the expanded prompt text. Original text: "
-
-        val requestBody = mapOf(
-            "contents" to listOf(
-                mapOf("parts" to listOf(mapOf("text" to "$systemInstruction $rawPrompt")))
-            )
-        )
-
-        val response = restTemplate.postForEntity(url, requestBody, Map::class.java)
-        val candidates = response.body?.get("candidates") as? List<Map<String, Any>>
-        val content = candidates?.get(0)?.get("content") as? Map<String, Any>
-        val parts = content?.get("parts") as? List<Map<String, Any>>
-
-        return parts?.get(0)?.get("text") as? String ?: rawPrompt
     }
 }

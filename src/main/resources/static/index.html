@@ -201,7 +201,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>Saint AI Engine 🌚</h1>
+    <h1>Saint AI Engine </h1>
     <textarea id="prompt" rows="3" placeholder="Describe something legendary..."></textarea>
     <button id="genBtn" onclick="generate()">Generate Masterpiece</button>
 
@@ -211,7 +211,6 @@
 
     <div id="output-grid"></div>
 </div>
-
 <script>
     async function generate() {
         const prompt = document.getElementById('prompt').value;
@@ -222,9 +221,8 @@
 
         if(!prompt) { alert("Please enter a prompt!"); return; }
 
-        // Start UI State
         grid.innerHTML = "";
-        // Create 4 skeleton loaders
+        // 1. Fixed: Now properly using the .skeleton class
         for(let i=0; i<4; i++) {
             const skel = document.createElement('div');
             skel.className = 'skeleton';
@@ -232,7 +230,7 @@
         }
 
         barContainer.style.display = "block";
-        setTimeout(() => bar.style.width = "40%", 100);
+        setTimeout(() => bar.style.width = "40%", 10);
 
         btn.disabled = true;
         btn.innerText = "Manifesting... ✨";
@@ -241,39 +239,43 @@
             const response = await fetch('/api/image/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: prompt })
+                body: JSON.stringify({ prompt }) // Cleaned up shorthand
             });
 
-            bar.style.width = "80%";
             const data = await response.json();
 
             if (data.error) {
-                 grid.innerHTML = `<p style='color:#ef4444; text-align:center; width:100%; grid-column: 1/-1;'>${data.error}</p>`;
-             } else {
+                grid.innerHTML = `<p style="color:#ef4444; grid-column:1/-1;">${data.error}</p>`;
+            } else {
                 bar.style.width = "100%";
-                grid.innerHTML = ""; // Clear skeletons
+                grid.innerHTML = "";
 
                 data.images.forEach((imgSrc, index) => {
                     const card = document.createElement('div');
-                    card.className = 'image-card';
+                    card.className = 'image-card'; // 2. Fixed: Properly using the .image-card class
+
+                    // 3. Fixed: Using BACKTICKS (`) here for line 259
                     card.style.animationDelay = `${index * 0.1}s`;
+
                     card.innerHTML = `
-                        <img src="${imgSrc}" alt="AI Image"><a href="${imgSrc}" download="Saint_AI_${Date.now()}.png" class="download-btn">Save to Device</a>
+                        <img src="${imgSrc}" alt="AI Gen">
+                        <a href="${imgSrc}" download="SaintAI_${Date.now()}.png" class="download-btn">Save to Device</a>
                     `;
                     grid.appendChild(card);
                 });
             }
         } catch (error) {
-            grid.innerHTML = "<p style='color:#ef4444; text-align:center; width:100%;'>Network Error. Check your connection!</p>";
+            grid.innerHTML = "<p style='color:#ef4444; grid-column:1/-1;'>Network Error!</p>";
         } finally {
             btn.disabled = false;
             btn.innerText = "Generate Masterpiece";
             setTimeout(() => {
                 barContainer.style.display = "none";
-                bar.style.width = "0%";
+                bar.style.width = "0";
             }, 2000);
         }
     }
 </script>
+
 </body>
 </html>

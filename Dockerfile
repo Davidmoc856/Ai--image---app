@@ -4,6 +4,8 @@ COPY --chown=gradle:gradle . .
 RUN if [ -f gradlew ]; then chmod +x ./gradlew; else echo "gradlew not found"; fi
 RUN ./gradlew build -x test --no-daemon
 FROM amazoncorretto:17-alpine
-EXPOSE 9090
+ARG PORT=9090
+ENV PORT=${PORT}
+EXPOSE ${PORT}
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar"]
